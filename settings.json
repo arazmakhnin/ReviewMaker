@@ -1,0 +1,40 @@
+﻿{
+    "jiraUser": "arazmakhnin",
+    "jiraPassword": "",
+    "gdrive-folders": {
+            "aurea-aes-cis": "1PlCgli9KpgcPvKkWx5N_MBWBBZxiThUr",
+            "gfi-languard": "1RHksDMZUmYNtA1UOJTB3GQX2JOcMgVYn",
+            "gfi-mail-archiver": "1dGB-ilWRttQEVFRbdHGu_MUAvrK3iRBj",
+            "gfi-mail-essentials": "1ju-bK1R5zcImZxUmXhpxo0NR5fwStozi",
+            "olive-development-channels": "1U5HxUgFXcmeg7VeumXhNmX8_XHrV7dhL",
+            "olive-development-nativeshell": "1-nIggNIlFUHG7YK1xQiO99_QYQuxepDm",
+            "olive-development-applications": "1lWHdHrSHNyMwixFPiNQDPHtlBofbKzm1",
+            "olive-development-tools": "1-_SXTUw45B2ClVaO7SuGLihwyPeBURng",
+            "VD-OA-PRD-AMS2.11.05": "1XW_tPmSXX8yL6xbUMMsShwC7yetBNX-w",
+            "VD-OA-PRD-CSA-MCG.02.00": "1XW_tPmSXX8yL6xbUMMsShwC7yetBNX-w",
+            "VD-OA-PRD-WS.D.SMART.180": "1XW_tPmSXX8yL6xbUMMsShwC7yetBNX-w",
+            "VD-OA-PRD-WSS.11.05": "1XW_tPmSXX8yL6xbUMMsShwC7yetBNX-w",
+            "VD-OA-PRD-CCS.02.00": "1XW_tPmSXX8yL6xbUMMsShwC7yetBNX-w",
+            "km-all-projects": "1zY7munvzgmvcIhcb3evBFxcvtDgPOydy",
+            "hand-Product-FMS": "1n6tkFIpx9z4W-ChDwa3Gs2DLimEao2eY",
+            "avolin-saratoga": "1VCAiVL2ZoHfjnIioQDL6L4703jQaFkUp"
+    },
+    "sheetPages": [
+        {
+            "name": "1. Basic checks",
+            "rulesCount": 33
+        },
+        {
+            "name": "2. Autofix",
+            "rulesCount": 0
+        },
+        {
+            "name": "3. Java",
+            "rulesCount": 10
+        },
+        {
+            "name": "4. C#",
+            "rulesCount": 10
+        }
+    ]
+}

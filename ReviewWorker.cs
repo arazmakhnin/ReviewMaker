@@ -25,81 +25,7 @@ namespace ReviewMaker
     {
         private const string ApplicationName = "ReviewMakerAurea";
 
-        private Dictionary<string, string> _folders = new Dictionary<string, string>
-        {
-            ["aurea-aes-cis"] = "1PlCgli9KpgcPvKkWx5N_MBWBBZxiThUr",
-            ["gfi-languard"] = "1RHksDMZUmYNtA1UOJTB3GQX2JOcMgVYn",
-            ["gfi-mail-archiver"] = "1dGB-ilWRttQEVFRbdHGu_MUAvrK3iRBj",
-            ["gfi-mail-essentials"] = "1ju-bK1R5zcImZxUmXhpxo0NR5fwStozi",
-            ["olive-development-channels"] = "1U5HxUgFXcmeg7VeumXhNmX8_XHrV7dhL",
-            ["olive-development-nativeshell"] = "1-nIggNIlFUHG7YK1xQiO99_QYQuxepDm",
-            ["olive-development-applications"] = "1lWHdHrSHNyMwixFPiNQDPHtlBofbKzm1",
-            ["olive-development-tools"] = "1-_SXTUw45B2ClVaO7SuGLihwyPeBURng",
-            ["VD-OA-PRD-AMS2.11.05"] = "1XW_tPmSXX8yL6xbUMMsShwC7yetBNX-w",
-            ["VD-OA-PRD-CSA-MCG.02.00"] = "1XW_tPmSXX8yL6xbUMMsShwC7yetBNX-w",
-            ["VD-OA-PRD-WS.D.SMART.180"] = "1XW_tPmSXX8yL6xbUMMsShwC7yetBNX-w",
-            ["VD-OA-PRD-WSS.11.05"] = "1XW_tPmSXX8yL6xbUMMsShwC7yetBNX-w",
-            ["VD-OA-PRD-CCS.02.00"] = "1XW_tPmSXX8yL6xbUMMsShwC7yetBNX-w",
-            ["km-all-projects"] = "1zY7munvzgmvcIhcb3evBFxcvtDgPOydy",
-            ["hand-Product-FMS"] = "1n6tkFIpx9z4W-ChDwa3Gs2DLimEao2eY"
-        };
-
-        private readonly ValueRange _basicChecksPass = new ValueRange
-        {
-            Values = new List<IList<object>>
-            {
-                new List<object> { "PASS" },
-                new List<object> { "PASS" },
-                new List<object> { "PASS" },
-                new List<object> { "PASS" },
-                new List<object> { "PASS" },
-                new List<object> { "PASS" },
-                new List<object> { "PASS" },
-                new List<object> { "PASS" },
-                new List<object> { "PASS" },
-                new List<object> { "PASS" },
-                new List<object> { "PASS" },
-                new List<object> { "PASS" },
-                new List<object> { "PASS" },
-                new List<object> { "PASS" },
-                new List<object> { "PASS" },
-                new List<object> { "PASS" },
-                new List<object> { "PASS" },
-                new List<object> { "PASS" },
-                new List<object> { "PASS" },
-                new List<object> { "PASS" },
-                new List<object> { "PASS" },
-                new List<object> { "PASS" },
-                new List<object> { "PASS" },
-                new List<object> { "PASS" },
-                new List<object> { "PASS" },
-                new List<object> { "PASS" },
-                new List<object> { "PASS" },
-                new List<object> { "PASS" },
-                new List<object> { "PASS" },
-                new List<object> { "PASS" },
-                new List<object> { "PASS" },
-                new List<object> { "PASS" },
-                new List<object> { "PASS" },
-            }
-        };
-
-        private readonly ValueRange _cSharpPass = new ValueRange
-        {
-            Values = new List<IList<object>>
-            {
-                new List<object> { "PASS" },
-                new List<object> { "PASS" },
-                new List<object> { "PASS" },
-                new List<object> { "PASS" },
-                new List<object> { "PASS" },
-                new List<object> { "PASS" },
-                new List<object> { "PASS" },
-                new List<object> { "PASS" },
-                new List<object> { "PASS" },
-                new List<object> { "PASS" },
-            }
-        };
+        private Dictionary<string, string> _folders;
 
         public async Task DoWork()
         {
@@ -133,6 +59,9 @@ namespace ReviewMaker
             {
                 _folders.Add(key, value.Value<string>());
             }
+
+            var serializer = new JsonSerializer();
+            var pages = serializer.Deserialize<SheetPage[]>(jSettings["sheetPages"].CreateReader());
             
             var jira = Jira.CreateRestClient("https://jira.devfactory.com", jiraUser, jiraPassword);
             var jiraUserFull = await jira.Users.GetUserAsync(jiraUser);
@@ -254,7 +183,8 @@ namespace ReviewMaker
                 TaskbarProgress.SetValue(3, 6);
 
                 Console.Write("Fill QB file... ");
-                FillQbFile(sheetsService, file, ticketUrl, prUrl, prAuthor.DisplayName, jiraUserFull.DisplayName);
+                FillQbSummary(sheetsService, file, ticketUrl, prUrl, prAuthor.DisplayName, jiraUserFull.DisplayName);
+                FillQbSheets(sheetsService, file, pages);
                 Console.WriteLine("done");
 
                 TaskbarProgress.SetValue(4, 6);
@@ -307,7 +237,7 @@ namespace ReviewMaker
             }
         }
 
-        private void FillQbFile(SheetsService sheetsService, File file, string issueUrl, string prUrl, string prAuthor, string prReviewer)
+        private void FillQbSummary(SheetsService sheetsService, File file, string issueUrl, string prUrl, string prAuthor, string prReviewer)
         {
             var summary1 = sheetsService.Spreadsheets.Values.Update(
                 new ValueRange
@@ -338,22 +268,40 @@ namespace ReviewMaker
 
             summary2.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.RAW;
             summary2.Execute();
+        }
 
-            var pass1 = sheetsService.Spreadsheets.Values.Update(
-                _basicChecksPass,
-                file.Id,
-                "1. Basic checks!A3:A35");
+        private static void FillQbSheets(SheetsService sheetsService, File file, SheetPage[] pages)
+        {
+            foreach (var page in pages.Where(p => p.RulesCount > 0))
+            {
+                var data = new ValueRange
+                {
+                    Values = Enumerable
+                        .Repeat((IList<object>)new List<object> { "PASS" }, page.RulesCount)
+                        .ToList()
+                };
+                //        new List<IList<object>>
+                //    {
+                //        new List<object> { "PASS" },
+                //        new List<object> { "PASS" },
+                //        new List<object> { "PASS" },
+                //        new List<object> { "PASS" },
+                //        new List<object> { "PASS" },
+                //        new List<object> { "PASS" },
+                //        new List<object> { "PASS" },
+                //        new List<object> { "PASS" },
+                //        new List<object> { "PASS" },
+                //        new List<object> { "PASS" },
+                //    }
+                //}
+                var pass1 = sheetsService.Spreadsheets.Values.Update(
+                    data,
+                    file.Id,
+                    $"{page.Name}!A3:A{(page.RulesCount + 2)}");
 
-            pass1.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.RAW;
-            pass1.Execute();
-
-            var pass2 = sheetsService.Spreadsheets.Values.Update(
-                _cSharpPass,
-                file.Id,
-                "4. C#!A3:A12");
-
-            pass2.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.RAW;
-            pass2.Execute();
+                pass1.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.RAW;
+                pass1.Execute();
+            }
         }
 
         private File CreateQbFile(string qbFolder, string qbFileName, DriveService driveService)
@@ -408,5 +356,11 @@ namespace ReviewMaker
         Approve,
         QbOnly,
         Reject
+    }
+
+    public class SheetPage
+    {
+        public string Name { get; set; }
+        public int RulesCount { get; set; }
     }
 }
