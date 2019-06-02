@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -184,8 +181,25 @@ namespace ReviewMaker
 
                 Console.Write("Fill QB file... ");
                 FillQbSummary(sheetsService, file, ticketUrl, prUrl, prAuthor.DisplayName, jiraUserFull.DisplayName);
-                FillQbSheets(sheetsService, file, pages);
+                FillQbSheets(sheetsService, file, pages, issue.Type.ToString());
                 Console.WriteLine("done");
+
+                Console.Write("Check QB file... ");
+                var qbResult = GetQbResult(sheetsService, file);
+                if (qbResult.Equals("Passed", StringComparison.OrdinalIgnoreCase))
+                {
+                    var c = Console.ForegroundColor;
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.WriteLine("passed");
+                    Console.ForegroundColor = c;
+                }
+                else
+                {
+                    var c = Console.ForegroundColor;
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine(qbResult);
+                    Console.ForegroundColor = c;
+                }
 
                 TaskbarProgress.SetValue(4, 6);
 
@@ -203,10 +217,7 @@ namespace ReviewMaker
 
                     TaskbarProgress.SetValue(5, 6);
 
-                    if (issue.Type != "Symbolic Execution - Memory Leaks")
-                    {
-                        issue["QB Checklist Report"] = qbLink;
-                    }
+                    issue["QB Checklist Report"] = qbLink;
 
                     if (command == Command.Approve)
                     {
@@ -235,6 +246,13 @@ namespace ReviewMaker
 
                 //TaskbarProgress.SetState(TaskbarState.NoProgress);
             }
+        }
+
+        private string GetQbResult(SheetsService sheetsService, File file)
+        {
+            var query = sheetsService.Spreadsheets.Values.Get(file.Id, "Summary!B15");
+            var result = query.Execute();
+            return result.Values[0][0].ToString();
         }
 
         private void FillQbSummary(SheetsService sheetsService, File file, string issueUrl, string prUrl, string prAuthor, string prReviewer)
@@ -270,10 +288,15 @@ namespace ReviewMaker
             summary2.Execute();
         }
 
-        private static void FillQbSheets(SheetsService sheetsService, File file, SheetPage[] pages)
+        private static void FillQbSheets(SheetsService sheetsService, File file, SheetPage[] pages, string issueType)
         {
             foreach (var page in pages.Where(p => p.RulesCount > 0))
             {
+                if (!string.IsNullOrWhiteSpace(page.TicketTypeCondition) && issueType != page.TicketTypeCondition)
+                {
+                    continue;
+                }
+
                 var data = new ValueRange
                 {
                     Values = Enumerable
@@ -362,5 +385,6 @@ namespace ReviewMaker
     {
         public string Name { get; set; }
         public int RulesCount { get; set; }
+        public string TicketTypeCondition { get; set; }
     }
 }

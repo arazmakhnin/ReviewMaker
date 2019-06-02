@@ -17,24 +17,46 @@
             "VD-OA-PRD-CCS.02.00": "1XW_tPmSXX8yL6xbUMMsShwC7yetBNX-w",
             "km-all-projects": "1zY7munvzgmvcIhcb3evBFxcvtDgPOydy",
             "hand-Product-FMS": "1n6tkFIpx9z4W-ChDwa3Gs2DLimEao2eY",
-            "avolin-saratoga": "1VCAiVL2ZoHfjnIioQDL6L4703jQaFkUp"
+            "avolin-saratoga": "1VCAiVL2ZoHfjnIioQDL6L4703jQaFkUp",
+            "avolin-coretrac": "19A-dsRgbYtjz6vyNcdwYUi7SnuEoRiXo"
     },
     "sheetPages": [
         {
             "name": "1. Basic checks",
-            "rulesCount": 33
+            "rulesCount": 50
         },
         {
-            "name": "2. Autofix",
-            "rulesCount": 0
+            "name": "2. BRP",
+            "rulesCount": 12,
+            "ticketTypeCondition": "BRP Issues"
         },
         {
             "name": "3. Java",
-            "rulesCount": 10
+            "rulesCount": 0
         },
         {
             "name": "4. C#",
-            "rulesCount": 10
-        }
+            "rulesCount": 13
+        },
+        {
+            "name": "5. Duplicate",
+            "rulesCount":  9,
+            "ticketTypeCondition": "Duplicate Code"
+        },
+        {
+            "name": "6. Long method",
+            "rulesCount":  4,
+            "ticketTypeCondition": "Long Methods"
+        },
+        {
+            "name": "8. Memory leaks",
+            "rulesCount":  10,
+            "ticketTypeCondition": "Symbolic Execution - Memory Leaks"
+        },
+        {
+            "name": "10. Long class",
+            "rulesCount":  9,
+            "ticketTypeCondition": "Long Classes"
+        },
     ]
 }
