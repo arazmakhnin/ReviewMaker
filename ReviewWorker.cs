@@ -60,8 +60,10 @@ namespace ReviewMaker
             var serializer = new JsonSerializer();
             var pages = serializer.Deserialize<SheetPage[]>(jSettings["sheetPages"].CreateReader());
             
+            Console.Write("Getting Jira user... ");
             var jira = Jira.CreateRestClient("https://jira.devfactory.com", jiraUser, jiraPassword);
             var jiraUserFull = await jira.Users.GetUserAsync(jiraUser);
+            Console.WriteLine("done");
             
             while (true)
             {
