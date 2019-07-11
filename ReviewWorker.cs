@@ -14,6 +14,7 @@ using Google.Apis.Sheets.v4.Data;
 using Google.Apis.Util.Store;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using ReviewMaker.Helpers;
 using File = Google.Apis.Drive.v3.Data.File;
 
 namespace ReviewMaker
@@ -49,6 +50,13 @@ namespace ReviewMaker
 
             var jiraUser = jSettings["jiraUser"].Value<string>();
             var jiraPassword = jSettings["jiraPassword"].Value<string>();
+            var githubToken = jSettings["githubToken"].Value<string>();
+            var copyQbUrlIfPrApproved = jSettings["copyQbUrlIfPrApproved"].Value<bool>();
+
+            if (string.IsNullOrWhiteSpace(githubToken))
+            {
+                ColorWriteLine("Github token is empty, so PR approving will be disabled", ConsoleColor.Yellow);
+            }
 
             var jFolders = (JObject)jSettings["gdrive-folders"];
             _folders = new Dictionary<string, string>();
@@ -67,6 +75,8 @@ namespace ReviewMaker
             
             while (true)
             {
+                Console.WriteLine("=========================================");
+
                 Console.Write("Enter command [qbonly, reject] or Jira ticket: ");
                 var ticketUrl = Console.ReadLine() ?? string.Empty;
 
@@ -134,7 +144,7 @@ namespace ReviewMaker
                     issue.CustomFields.Add("Peer reviewer", jiraUser);
                     await jira.Issues.UpdateIssueAsync(issue);
 
-                    // Нужно перезагрузить тикет, иначе не сможем перевести его в следующее состояние
+                    // Need to reload ticket. Otherwise we can't move it forward to the next status
                     issue = await jira.Issues.GetIssueAsync(m.Value);
                     Console.WriteLine("done");
                 }
@@ -151,23 +161,15 @@ namespace ReviewMaker
                 TaskbarProgress.SetValue(2, 6);
 
                 var prUrl = issue["Code Review Ticket URL"].ToString();
-                if (string.IsNullOrWhiteSpace(prUrl) || !prUrl.StartsWith("https://github.com"))
+                if (!GithubHelper.ParsePrUrl(prUrl, out var repoName, out var prNumber))
                 {
                     Console.WriteLine($"Invalid PR url: {prUrl}");
                     TaskbarProgress.SetState(TaskbarState.Error);
                     continue;
                 }
 
-                var prUrlParts = prUrl.Split('/', StringSplitOptions.RemoveEmptyEntries);
-                if (prUrlParts.Length != 6 || !int.TryParse(prUrlParts[5], out _))
-                {
-                    Console.WriteLine($"Invalid PR url: {prUrl}");
-                    TaskbarProgress.SetState(TaskbarState.Error);
-                    continue;
-                }
-
-                var qbFolder = prUrlParts[3];
-                var qbFileName = $"{prUrlParts[3]}/{prUrlParts[4]}/{prUrlParts[5]}";
+                var qbFolder = repoName;
+                var qbFileName = $"{repoName}/pull/{prNumber}";
                 if (!_folders.ContainsKey(qbFolder))
                 {
                     Console.WriteLine($"Unknown QB folder: {qbFolder}");
@@ -190,23 +192,18 @@ namespace ReviewMaker
                 var qbResult = GetQbResult(sheetsService, file);
                 if (qbResult.Equals("Passed", StringComparison.OrdinalIgnoreCase))
                 {
-                    var c = Console.ForegroundColor;
-                    Console.ForegroundColor = ConsoleColor.Green;
-                    Console.WriteLine("passed");
-                    Console.ForegroundColor = c;
+                    ColorWriteLine("passed", ConsoleColor.Green);
                 }
                 else
                 {
-                    var c = Console.ForegroundColor;
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine(qbResult);
-                    Console.ForegroundColor = c;
+                    ColorWriteLine(qbResult, ConsoleColor.Red);
                 }
 
                 TaskbarProgress.SetValue(4, 6);
 
                 var qbLink = $"https://docs.google.com/spreadsheets/d/{file.Id}/edit#gid=1247094356";
 
+                var prApproved = false;
                 if (command != Command.QbOnly)
                 {
                     var message = command == Command.Approve ? "Move ticket to \"Code merge\"... " : "Reject ticket... ";
@@ -233,21 +230,113 @@ namespace ReviewMaker
                     TaskbarProgress.SetValue(6, 6);
 
                     Console.WriteLine("done");
+
+                    if (command == Command.Approve && !string.IsNullOrWhiteSpace(githubToken))
+                    {
+                        Console.Write("Approve PR... ");
+                        if (await ApprovePr(githubToken, repoName, prNumber, qbLink))
+                        {
+                            Console.WriteLine("done");
+                            prApproved = true;
+                        }
+                        else
+                        {
+                            ColorWriteLine("error", ConsoleColor.Red);
+                        }
+                    }
                 }
                 else
                 {
                     TaskbarProgress.SetValue(6, 6);
                 }
-
+                
                 Console.WriteLine("QB url: " + qbLink);
 
-                WindowsClipboard.SetText(qbLink);
-                Console.WriteLine("Url copied to clipboard");
-
-                Console.WriteLine("=========================================");
+                if (copyQbUrlIfPrApproved || !prApproved)
+                {
+                    WindowsClipboard.SetText(qbLink);
+                    Console.WriteLine("Url copied to clipboard");
+                }
 
                 //TaskbarProgress.SetState(TaskbarState.NoProgress);
             }
+        }
+
+        private static void ColorWriteLine(string text, ConsoleColor color)
+        {
+            var c = Console.ForegroundColor;
+            Console.ForegroundColor = color;
+            Console.WriteLine(text);
+            Console.ForegroundColor = c;
+        }
+
+        private async Task<bool> ApprovePr(string githubToken, string repoName, string prNumber, string qbLink)
+        {
+            var query = @"query {
+                repository(owner:""trilogy-group"", name:""" + repoName + @"""){
+                    pullRequest(number: " + prNumber + @"){
+                        id
+                        body
+                    }
+                }
+            }";
+
+            var repoData = await GithubHelper.Query(query, githubToken);
+            var prId = repoData["repository"]["pullRequest"]["id"].Value<string>();
+            var body = repoData["repository"]["pullRequest"]["body"].Value<string>();
+
+            var qbInBody = body.Contains("- Please insert QB sheet here");
+
+
+            var addReviewMutation = @"mutation w{ 
+                addPullRequestReview(input: {pullRequestId: """ + prId + @"""}) { 
+                    pullRequestReview {id}
+                }
+            }";
+
+            var reviewData = await GithubHelper.Query(addReviewMutation, githubToken);
+            var reviewId = reviewData["addPullRequestReview"]["pullRequestReview"]["id"].Value<string>();
+
+
+            var reviewBody = string.Empty;
+            if (!qbInBody)
+            {
+                reviewBody = "body: \"QB: " + qbLink + "\"";
+            }
+
+            var submitReviewMutation = @"mutation e { 
+                submitPullRequestReview(input: {
+                    " + reviewBody + @"
+                    pullRequestReviewId: """ + reviewId + @""",
+                    event: APPROVE}) { 
+                        clientMutationId
+                }
+            }";
+
+            var submitData = await GithubHelper.Query(submitReviewMutation, githubToken);
+            var isOk = submitData["submitPullRequestReview"]["clientMutationId"] != null;
+            if (isOk && qbInBody)
+            {
+                var newPrBody = body
+                    .Replace("- Please insert QB sheet here", "- QB: " + qbLink);
+                    //.Replace("\r", "\\r")
+                    //.Replace("\n", "\\n");
+
+                var editPrBodyMutation = @"mutation r {
+                    updatePullRequest(input: {
+                        pullRequestId: """ + prId + @""",
+                        body: """ + newPrBody + @"""}){ 
+                            pullRequest {
+                                body
+                            }
+                    }
+                }";
+
+                var editPrBodyData = await GithubHelper.Query(editPrBodyMutation, githubToken);
+                isOk = editPrBodyData["updatePullRequest"]["pullRequest"]["body"] != null;
+            }
+
+            return isOk;
         }
 
         private string GetQbResult(SheetsService sheetsService, File file)
@@ -388,5 +477,21 @@ namespace ReviewMaker
         public string Name { get; set; }
         public int RulesCount { get; set; }
         public string TicketTypeCondition { get; set; }
+    }
+    
+    public static class AppFolderHelper
+    {
+        public static string GetAppFolder()
+        {
+            var codebase = Assembly.GetExecutingAssembly().CodeBase;
+            var uri = new UriBuilder(codebase);
+            var path = Uri.UnescapeDataString(uri.Path);
+            return Path.GetDirectoryName(path);
+        }
+
+        public static string GetFile(string filename)
+        {
+            return Path.Combine(GetAppFolder(), filename);
+        }
     }
 }
