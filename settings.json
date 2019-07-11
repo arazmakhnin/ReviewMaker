@@ -4,7 +4,7 @@
 
     // GitHub personal access token (https://github.com/settings/tokens)
     // Optional. If it's empty, PR won't be approved.
-    "githubToken": "4e8a09f07332a5b7e960fc9edef176e29aee668f",
+    "githubToken": "",
 
     // Copy QB url to clipboard. I think, it's Windows only for now. Need to test it.
     "copyQbUrlIfPrApproved": false, 
