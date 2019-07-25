@@ -1,80 +1,77 @@
 ﻿{
-    "jiraUser": "arazmakhnin",
-    "jiraPassword": "",
+  // Default jira server is "http://jira.devfactory.com", but you can use specific jira node
+  // For example, "http://jira-prod-node-4.devfactory.com:8086"
+  "jiraServer": "https://jira.devfactory.com",
+  "jiraUser": "",
+  "jiraPassword": "",
 
-    // GitHub personal access token (https://github.com/settings/tokens)
-    // Optional. If it's empty, PR won't be approved.
-    "githubToken": "",
+  // GitHub personal access token (https://github.com/settings/tokens)
+  "githubToken": "",
 
-    // Copy QB url to clipboard. I think, it's Windows only for now. Need to test it.
-    "copyQbUrlIfPrApproved": false, 
+  // Approve PR or just leave a comment "Approved". Value: "approve" or "comment"
+  "approvePrAction": "comment",
+  // In case of rejecting ticket, reject PR automatically: true/false
+  "rejectPr": true,
 
-    // Google drive folders ids
-    "gdrive-folders": {
-            "aurea-aes-cis": "1PlCgli9KpgcPvKkWx5N_MBWBBZxiThUr",
-            "gfi-languard": "1RHksDMZUmYNtA1UOJTB3GQX2JOcMgVYn",
-            "gfi-mail-archiver": "1dGB-ilWRttQEVFRbdHGu_MUAvrK3iRBj",
-            "gfi-mail-essentials": "1ju-bK1R5zcImZxUmXhpxo0NR5fwStozi",
-            "olive-development-channels": "1U5HxUgFXcmeg7VeumXhNmX8_XHrV7dhL",
-            "olive-development-nativeshell": "1-nIggNIlFUHG7YK1xQiO99_QYQuxepDm",
-            "olive-development-applications": "1lWHdHrSHNyMwixFPiNQDPHtlBofbKzm1",
-            "olive-development-tools": "1-_SXTUw45B2ClVaO7SuGLihwyPeBURng",
-            "VD-OA-PRD-AMS2.11.05": "1XW_tPmSXX8yL6xbUMMsShwC7yetBNX-w",
-            "VD-OA-PRD-CSA-MCG.02.00": "1XW_tPmSXX8yL6xbUMMsShwC7yetBNX-w",
-            "VD-OA-PRD-WS.D.SMART.180": "1XW_tPmSXX8yL6xbUMMsShwC7yetBNX-w",
-            "VD-OA-PRD-WSS.11.05": "1XW_tPmSXX8yL6xbUMMsShwC7yetBNX-w",
-            "VD-OA-PRD-CCS.02.00": "1XW_tPmSXX8yL6xbUMMsShwC7yetBNX-w",
-            "km-all-projects": "1zY7munvzgmvcIhcb3evBFxcvtDgPOydy",
-            "hand-Product-FMS": "1n6tkFIpx9z4W-ChDwa3Gs2DLimEao2eY",
-            "avolin-saratoga": "1VCAiVL2ZoHfjnIioQDL6L4703jQaFkUp",
-            "avolin-coretrac": "19A-dsRgbYtjz6vyNcdwYUi7SnuEoRiXo",
-            "vepmlive-epmlive2013release": "1mjJ1XAKcHInk4fLzgLjPGe1FsYgERcNH",
-            "avolin-onyx-7.9": "1tsS7FsH7ijvFEZ6u3aWbkQMm0jx96pM1"
+  // History sheet parameters
+  "historyDocumentId": "1pxpBz0Qid9-aOVENekF7xuqOf6C3mq607EwGsEVAG-A",
+  "historySheetName": "Review history new",
+  "historySystemSheet": "System",
+
+  // Local date or UTC
+  "useLocalDate": false,
+
+  // Google drive folders ids
+  "googleDriveFolders": {
+    "km-all-projects": "1OXd71EghlXyS-49Cae3HYMRNhULqFyqJ",
+    "avolin-coretrac": "15D3GfQUqz2W--mefiNHCe4qGKcP8qPL_",
+    "avolin-onyx-7.9": "1wGBxr0P1YwjGsDSkTmrUangx69zC2QFr",
+    "avolin-saratoga": "1Le_Tm7NXe2ZJWLz84aImI9mr9ZeNvA-s"
+  },
+
+  // IQB sheets info
+  "sheetPages": [
+    {
+      "name": "1. Basic checks",
+      "rulesCount": 50
     },
-    
-    // IQB sheets info
-    "sheetPages": [
-        {
-            "name": "1. Basic checks",
-            "rulesCount": 50
-        },
-        {
-            "name": "2. BRP",
-            "rulesCount": 12,
-            "ticketTypeCondition": "BRP Issues"
-        },
-        {
-            "name": "3. Java",
-            "rulesCount": 0
-        },
-        {
-            "name": "4. C#",
-            "rulesCount": 13
-        },
-        {
-            "name": "5. Duplicate",
-            "rulesCount":  9,
-            "ticketTypeCondition": "Duplicate Code"
-        },
-        {
-            "name": "6. Long method",
-            "rulesCount":  4,
-            "ticketTypeCondition": "Long Methods"
-        },
-        {
-            "name": "7. Deadcode",
-            "rulesCount":  6,
-            "ticketTypeCondition": "Dead Code"
-        },
-        {
-            "name": "8. Memory leaks",
-            "rulesCount":  10,
-            "ticketTypeCondition": "Symbolic Execution - Memory Leaks"
-        },
-        {
-            "name": "10. Long class",
-            "rulesCount":  9,
-            "ticketTypeCondition": "Long Classes"
-        },
-    ]
+    {
+      "name": "2. BRP",
+      "rulesCount": 12,
+      "ticketTypeCondition": "BRP Issues"
+    },
+    {
+      "name": "3. Java",
+      "rulesCount": 0
+    },
+    {
+      "name": "4. C#",
+      "rulesCount": 13
+    },
+    {
+      "name": "5. Duplicate",
+      "rulesCount": 9,
+      "ticketTypeCondition": "Duplicate Code"
+    },
+    {
+      "name": "6. Long method",
+      "rulesCount": 4,
+      "ticketTypeCondition": "Long Methods"
+    },
+    {
+      "name": "7. Deadcode",
+      "rulesCount": 6,
+      "ticketTypeCondition": "Dead Code"
+    },
+    {
+      "name": "8. Memory leaks",
+      "rulesCount": 10,
+      "ticketTypeCondition": "Symbolic Execution - Memory Leaks"
+    },
+    {
+      "name": "10. Long class",
+      "rulesCount": 9,
+      "ticketTypeCondition": "Long Classes"
+    }
+  ]
 }

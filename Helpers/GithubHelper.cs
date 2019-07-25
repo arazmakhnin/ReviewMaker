@@ -9,20 +9,21 @@ namespace ReviewMaker.Helpers
 {
     public static class GithubHelper
     {
-        private static readonly Regex PrUrlRegex = new Regex(@"^https://github\.com/trilogy-group/([-A-Za-z0-9.]+)/pull/(\d+)(/files)?$");
+        private static readonly Regex PrUrlRegex = new Regex(@"^https://github\.com/([-A-Za-z0-9_.]+)/([-A-Za-z0-9_.]+)/pull/(\d+)(/files)?$");
 
-        public static bool ParsePrUrl(string url, out string repoName, out string prNumber)
+        public static bool ParsePrUrl(string url, out PrInfo prInfo)
         {
             var match = PrUrlRegex.Match(url);
             if (!match.Success)
             {
-                repoName = null;
-                prNumber = null;
+                prInfo = null;
                 return false;
             }
 
-            repoName = match.Groups[1].Value;
-            prNumber = match.Groups[2].Value;
+            prInfo = new PrInfo(
+                match.Groups[1].Value,
+                match.Groups[2].Value,
+                match.Groups[3].Value);
             return true;
         }
 
@@ -45,6 +46,20 @@ namespace ReviewMaker.Helpers
 
                 return ((JToken)JsonConvert.DeserializeObject(result))["data"];
             }
+        }
+    }
+
+    public class PrInfo
+    {
+        public string OwnerName { get; }
+        public string RepoName { get; }
+        public string PrNumber { get; }
+
+        public PrInfo(string ownerName, string repoName, string prNumber)
+        {
+            OwnerName = ownerName;
+            RepoName = repoName;
+            PrNumber = prNumber;
         }
     }
 }
