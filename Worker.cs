@@ -65,20 +65,6 @@ namespace ReviewMaker
 
                 await StartReview(date, ticketUrl);
 
-                Console.Write("Make checks... ");
-                var failedChecks = AdditionalChecks.Make(_issue);
-                Console.WriteLine("done");
-
-                if (failedChecks.Any())
-                {
-                    ConsoleHelper.WriteLineColor("Failed checks: ", ConsoleColor.Yellow);
-
-                    foreach (var failedCheck in failedChecks)
-                    {
-                        ConsoleHelper.WriteLineColor(" * " + failedCheck, ConsoleColor.Yellow);
-                    }
-                }
-
                 Console.WriteLine();
                 var qbLink = $"https://docs.google.com/spreadsheets/d/{_qbFile.Id}/edit#gid=1247094356";
                 Console.WriteLine($"QB url: {qbLink}");
@@ -124,7 +110,21 @@ namespace ReviewMaker
             {
                 throw new ReviewException($"Unknown ticket state: {_issue.Status}");
             }
-            
+
+            Console.Write("Make checks... ");
+            var failedChecks = AdditionalChecks.Make(_issue);
+            Console.WriteLine("done");
+
+            if (failedChecks.Any())
+            {
+                ConsoleHelper.WriteLineColor("Failed checks: ", ConsoleColor.Yellow);
+
+                foreach (var failedCheck in failedChecks)
+                {
+                    ConsoleHelper.WriteLineColor(" * " + failedCheck, ConsoleColor.Yellow);
+                }
+            }
+
             Console.Write("Set peer reviewer... ");
             if (_issue.CustomFields["Peer reviewer"] == null)
             {
