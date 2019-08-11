@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -57,10 +58,11 @@ namespace ReviewMaker
             }
 
             Console.Write("Getting Jira user... ");
-            //var jira = Jira.CreateRestClient("https://jira.devfactory.com", settings.JiraUser, settings.JiraPassword);
             var jira = Jira.CreateRestClient(settings.JiraServer, settings.JiraUser, settings.JiraPassword);
             var jiraUserFull = await jira.Users.GetUserAsync(settings.JiraUser);
             Console.WriteLine("done");
+
+            var googleDriveFolders = new Dictionary<string, string>();
             
             while (true)
             {
@@ -68,7 +70,7 @@ namespace ReviewMaker
 
                 try
                 {
-                    var worker = new Worker(jira, jiraUserFull, driveService, sheetsService, settings);
+                    var worker = new Worker(jira, jiraUserFull, driveService, sheetsService, settings, googleDriveFolders);
                     await worker.DoWork();
                 }
                 catch (Exception ex)

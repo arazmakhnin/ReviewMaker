@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace ReviewMaker
+﻿namespace ReviewMaker
 {
     public class Settings
     {
@@ -14,7 +12,6 @@ namespace ReviewMaker
         public string HistorySheetName { get; set; }
         public string HistorySystemSheet { get; set; }
         public bool UseLocalDate { get; set; }
-        public Dictionary<string, string> GoogleDriveFolders { get; set; }
         public SheetPage[] SheetPages { get; set; }
     }
 

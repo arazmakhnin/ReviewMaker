@@ -21,14 +21,6 @@
   // Local date or UTC
   "useLocalDate": false,
 
-  // Google drive folders ids
-  "googleDriveFolders": {
-    "km-all-projects": "1OXd71EghlXyS-49Cae3HYMRNhULqFyqJ",
-    "avolin-coretrac": "15D3GfQUqz2W--mefiNHCe4qGKcP8qPL_",
-    "avolin-onyx-7.9": "1wGBxr0P1YwjGsDSkTmrUangx69zC2QFr",
-    "avolin-saratoga": "1Le_Tm7NXe2ZJWLz84aImI9mr9ZeNvA-s"
-  },
-
   // IQB sheets info
   "sheetPages": [
     {

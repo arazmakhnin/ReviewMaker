@@ -26,6 +26,7 @@ namespace ReviewMaker
         private readonly DriveService _driveService;
         private readonly SheetsService _sheetsService;
         private readonly Settings _settings;
+        private readonly IDictionary<string, string> _googleDriveFolders;
         private Issue _issue;
         private JiraUser _prAuthor;
         private File _qbFile;
@@ -36,13 +37,15 @@ namespace ReviewMaker
             JiraUser jiraUser, 
             DriveService driveService, 
             SheetsService sheetsService,
-            Settings settings)
+            Settings settings,
+            IDictionary<string, string> googleDriveFolders)
         {
             _jira = jira;
             _jiraUser = jiraUser;
             _driveService = driveService;
             _sheetsService = sheetsService;
             _settings = settings;
+            _googleDriveFolders = googleDriveFolders;
         }
 
         public async Task DoWork()
@@ -160,9 +163,12 @@ namespace ReviewMaker
 
             var qbFolder = _prInfo.RepoName;
             var qbFileName = $"{_issue.Key} {date}";
-            if (!_settings.GoogleDriveFolders.ContainsKey(qbFolder))
+            if (!_googleDriveFolders.ContainsKey(qbFolder))
             {
-                throw new ReviewException($"Unknown QB folder: {qbFolder}");
+                Console.Write("Get QB folder id... ");
+                var qbFolderId = GetQbFolderId(qbFolder);
+                _googleDriveFolders.Add(qbFolder, qbFolderId);
+                Console.WriteLine("done");
             }
 
             Console.Write("Create QB file... ");
@@ -175,11 +181,45 @@ namespace ReviewMaker
             Console.WriteLine("done");
         }
 
+        private string GetQbFolderId(string qbFolder)
+        {
+            const string parentQaFolder = "1o38nUKG95A6zqC90L05BjfIx28eCCf1m";
+
+            var listRequest = _driveService.Files.List();
+            listRequest.Q = $"name = '{qbFolder}' and '{parentQaFolder}' in parents";
+            var listResult = listRequest.Execute();
+
+            if (listResult.Files.Count > 1)
+            {
+                throw new ReviewException($"Found multiple folders with the same name: {qbFolder}. Ids:\r\n" +
+                                          string.Join("\r\n", listResult.Files.Select(f => f.Id)));
+            }
+
+            if (listResult.Files.Count == 1)
+            {
+                return listResult.Files.Single().Id;
+            }
+
+            var file = new File
+            {
+                MimeType = "application/vnd.google-apps.folder",
+                Name = qbFolder,
+                Parents = new List<string>
+                {
+                    parentQaFolder
+                }
+            };
+            var createRequest = _driveService.Files.Create(file);
+            var createResult = createRequest.Execute();
+
+            return createResult.Id;
+        }
+
         private File CreateQbFile(string qbFolder, string qbFileName)
         {
             var copy = new File
             {
-                Parents = new List<string> { _settings.GoogleDriveFolders[qbFolder] },
+                Parents = new List<string> { _googleDriveFolders[qbFolder] },
                 CopyRequiresWriterPermission = true,
                 Name = qbFileName,
             };
