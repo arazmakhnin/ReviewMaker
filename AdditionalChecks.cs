@@ -25,7 +25,13 @@ namespace ReviewMaker
                 return;
             }
 
-            if (issue.Type == "Dead Code" && summaryTicketType.Equals("deadcode", StringComparison.OrdinalIgnoreCase))
+            if (issue.Type == "Dead Code" && summaryTicketType.Equals("DeadCode", StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            if (issue.Type == "Symbolic Execution - Memory Leaks"
+                && summaryTicketType.Equals("Memory Leaks", StringComparison.OrdinalIgnoreCase))
             {
                 return;
             }

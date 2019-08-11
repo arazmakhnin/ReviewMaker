@@ -64,6 +64,11 @@
       "name": "10. Long class",
       "rulesCount": 9,
       "ticketTypeCondition": "Long Classes"
+    },
+    {
+      "name": "11. SOLID",
+      "rulesCount": 3,
+      "ticketTypeCondition": "SOLID: Single Responsibility"
     }
   ]
 }
