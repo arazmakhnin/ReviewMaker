@@ -321,26 +321,42 @@ namespace ReviewMaker
 
                 try
                 {
-                    switch (strCommand.ToLowerInvariant())
+                    var commandArgs = strCommand.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+                    switch (commandArgs[0].ToLowerInvariant())
                     {
-                        case "open qb":
                         case "open":
                         case "o":
+                            if (commandArgs.Length > 1)
+                            {
+                                throw new ReviewException("Command \"open\" doesn't support parameters");
+                            }
+
                             OpenQbLink(qbLink);
                             continue;
 
                         case "approve":
                         case "a":
+                            if (commandArgs.Length > 1)
+                            {
+                                throw new ReviewException("Command \"approve\" doesn't support parameters");
+                            }
+
                             await Approve(qbLink);
                             return;
 
                         case "reject":
                         case "r":
-                            await Reject(date, qbLink);
+                            await Reject(commandArgs.Skip(1).ToArray(), date, qbLink);
                             return;
 
                         case "skip":
                         case "s":
+                            if (commandArgs.Length > 1)
+                            {
+                                throw new ReviewException("Command \"skip\" doesn't support parameters");
+                            }
+
                             return;
 
                         default:
@@ -499,8 +515,15 @@ namespace ReviewMaker
             return submitData["submitPullRequestReview"]["clientMutationId"] != null;
         }
 
-        private async Task Reject(string date, string qbLink)
+        private async Task Reject(IReadOnlyCollection<string> parameters, string date, string qbLink)
         {
+            if (parameters.Any())
+            {
+                Console.Write("Fill failed QB items... ");
+                FillFailedItems(parameters);
+                Console.WriteLine("done");
+            }
+
             Console.Write("Check QB file... ");
             var qbResult = GetQbResult();
             if (qbResult.Equals("Passed", StringComparison.OrdinalIgnoreCase))
@@ -529,6 +552,71 @@ namespace ReviewMaker
             Console.WriteLine("done");
 
             AddRecordToHistorySheet(date, failedItems);
+        }
+
+        private void FillFailedItems(IReadOnlyCollection<string> parameters)
+        {
+            var rangesToUpdate = new List<ValueRange>();
+
+            foreach (var parameter in parameters.Where(p => !string.IsNullOrWhiteSpace(p)))
+            {
+                var parameterParts = parameter.Split('.');
+                if (parameterParts.Length != 2 ||
+                    !int.TryParse(parameterParts[0].Trim(), out var sheetIndex) ||
+                    !int.TryParse(parameterParts[1].Trim(), out var ruleIndex))
+                {
+                    throw new ReviewException($"Unknown format of parameter \"{parameterParts}\". Should be \"N.N\"");
+                }
+
+                var sheet = _sheetsService.Spreadsheets
+                    .Get(_qbFile.Id)
+                    .Execute()
+                    .Sheets
+                    .FirstOrDefault(s => s.Properties.Title.StartsWith($"{sheetIndex}."));
+
+                if (sheet == null)
+                {
+                    throw new ReviewException($"Sheet with index \"{sheetIndex}\" not found");
+                }
+
+                var ruleValues = _sheetsService.Spreadsheets.Values.Get(_qbFile.Id, $"{sheet.Properties.Title}!G:G")
+                    .Execute();
+
+                var fullRuleIndex = $"{sheetIndex}.{ruleIndex}";
+                var qbRuleIndex = -1;
+                for (var i = 0; i < ruleValues.Values.Count; i++)
+                {
+                    var rule = ruleValues.Values[i][0].ToString();
+                    if (rule == fullRuleIndex)
+                    {
+                        qbRuleIndex = i + 1;
+                        break;
+                    }
+                }
+
+                if (qbRuleIndex == -1)
+                {
+                    throw new ReviewException($"Rule with index {fullRuleIndex} not found");
+                }
+                
+                var valueRange = new ValueRange
+                {
+                    Range = $"{sheet.Properties.Title}!A{qbRuleIndex}:A{qbRuleIndex}",
+                    Values = new List<IList<object>> { new List<object> { "FAIL" } },
+                };
+
+                rangesToUpdate.Add(valueRange);
+            }
+
+            var batchUpdate = new BatchUpdateValuesRequest
+            {
+                Data = rangesToUpdate,
+                ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.RAW.ToString()
+            };
+
+            _sheetsService.Spreadsheets.Values
+                .BatchUpdate(batchUpdate, _qbFile.Id)
+                .Execute();
         }
 
         private void AddRecordToHistorySheet(string date, IReadOnlyCollection<string> failedItems)
