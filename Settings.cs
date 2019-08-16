@@ -20,5 +20,6 @@
         public string Name { get; set; }
         public int RulesCount { get; set; }
         public string TicketTypeCondition { get; set; }
+        public string LanguageCondition { get; set; }
     }
 }

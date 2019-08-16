@@ -177,7 +177,7 @@ namespace ReviewMaker
 
             Console.Write("Fill QB file... ");
             FillQbSummary(ticketUrl, prUrl, _prAuthor.DisplayName);
-            FillQbSheets(_issue.Type.ToString());
+            FillQbSheets(_issue.Type.ToString(), _issue.Summary.EndsWith(".cs", StringComparison.OrdinalIgnoreCase) ? "csharp" : "java");
             Console.WriteLine("done");
         }
 
@@ -264,11 +264,16 @@ namespace ReviewMaker
             summary2.Execute();
         }
 
-        private void FillQbSheets(string issueType)
+        private void FillQbSheets(string issueType, string ticketLanguage)
         {
             foreach (var page in _settings.SheetPages.Where(p => p.RulesCount > 0))
             {
                 if (!string.IsNullOrWhiteSpace(page.TicketTypeCondition) && issueType != page.TicketTypeCondition)
+                {
+                    continue;
+                }
+
+                if (!string.IsNullOrWhiteSpace(page.LanguageCondition) && ticketLanguage != page.LanguageCondition)
                 {
                     continue;
                 }

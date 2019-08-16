@@ -34,11 +34,13 @@
     },
     {
       "name": "3. Java",
-      "rulesCount": 0
+      "rulesCount": 16,
+      "languageCondition": "java"
     },
     {
       "name": "4. C#",
-      "rulesCount": 13
+      "rulesCount": 13,
+      "languageCondition": "csharp"
     },
     {
       "name": "5. Duplicate",

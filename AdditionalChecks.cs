@@ -31,7 +31,8 @@ namespace ReviewMaker
             }
 
             if (issue.Type == "Symbolic Execution - Memory Leaks"
-                && summaryTicketType.Equals("Memory Leaks", StringComparison.OrdinalIgnoreCase))
+                && (summaryTicketType.Equals("Memory Leaks", StringComparison.OrdinalIgnoreCase) ||
+                    summaryTicketType.Equals("Memory Leak", StringComparison.OrdinalIgnoreCase)))
             {
                 return;
             }
